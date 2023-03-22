@@ -2,6 +2,7 @@ package main
 
 import (
 	"net"
+	"strings"
 )
 
 type User struct {
@@ -65,6 +66,33 @@ func (this *User) DoMessage(msg string) {
 		}
 		this.server.mapLock.Unlock()
 
+	} else if msg == "whoami" { // 用户查询自己的信息
+		this.SendMsg("Your user name is [" + this.Name + "]\n")
+		_, ok := this.server.OnlineMap[this.Name]
+		if ok {
+			this.SendMsg("And your state is Online.\n")
+		} else {
+			this.SendMsg("And your state is Offline.\n")
+		}
+
+	} else if len(msg) > 7 && msg[:7] == "rename|" { // 用户更新用户名
+		// rename|<newname>
+		newName := strings.Split(msg, "|")[1]
+
+		// 判断newNme是否被其他用户使用
+		_, ok := this.server.OnlineMap[newName]
+		if ok {
+			this.SendMsg("Sorry, this name has been used by other users.\n")
+		} else {
+			this.server.mapLock.Lock()
+			delete(this.server.OnlineMap, this.Name)
+			this.server.OnlineMap[newName] = this
+			this.server.mapLock.Unlock()
+
+			this.Name = newName
+
+			this.SendMsg("Now your username has been updated to[" + this.Name + "]\n")
+		}
 	} else {
 		this.server.BroadCast(this, msg)
 	}
