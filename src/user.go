@@ -76,7 +76,7 @@ func (this *User) DoMessage(msg string) {
 		}
 
 	} else if len(msg) > 7 && msg[:7] == "rename|" { // 用户更新用户名
-		// rename|<newname>
+		//格式: rename|<newname>
 		newName := strings.Split(msg, "|")[1]
 
 		// 判断newNme是否被其他用户使用
@@ -93,6 +93,30 @@ func (this *User) DoMessage(msg string) {
 
 			this.SendMsg("Now your username has been updated to[" + this.Name + "]\n")
 		}
+	} else if len(msg) > 4 && msg[:3] == "to|" { //私聊
+		//格式: to|<username>|context
+
+		//1.获取私聊对象用户名
+		remoteName := strings.Split(msg, "|")[1]
+		if remoteName == "" {
+			this.SendMsg("Format Error, Please use format as \"to|<username>|context\"\n")
+			return
+		}
+		//2.获取私聊对象
+		remoteUser, ok := this.server.OnlineMap[remoteName]
+		if !ok {
+			this.SendMsg("The target user is offline or not exists.\n")
+			return
+		}
+		//3.获取消息内容,通过私聊对象发送
+		content := strings.Split(msg, "|")[2]
+		if content == "" {
+			this.SendMsg("Content is null, please send message again.\n")
+			return
+		}
+		remoteUser.SendMsg("User[" + this.Name + "] send a message to you:\n")
+		remoteUser.SendMsg(content + "\n")
+
 	} else {
 		this.server.BroadCast(this, msg)
 	}
