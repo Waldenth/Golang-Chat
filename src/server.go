@@ -52,16 +52,13 @@ func (this *Server) BroadCast(user *User, msg string) {
 	this.Message <- sendMsg
 }
 
-// 处理链接业务
+// 处理新连接业务
 func (this *Server) Handler(conn net.Conn) {
 	//fmt.Println("Connection established successfully.")
-	// 用户上线,onlineMap更新
-	user := NewUser(conn)
-	this.mapLock.Lock()
-	this.OnlineMap[user.Name] = user
-	this.mapLock.Unlock()
-	//全局广播用户上线消息
-	this.BroadCast(user, " is online now.")
+	// 新的连接,创建新的用户对象
+	user := NewUser(conn, this)
+
+	user.Online()
 
 	//接受客户端发送的消息
 	go func() {
@@ -69,7 +66,7 @@ func (this *Server) Handler(conn net.Conn) {
 		for {
 			n, err := conn.Read(buf)
 			if n == 0 {
-				this.BroadCast(user, " is offline now.")
+				user.Offline()
 				return
 			}
 			if err != nil {
@@ -80,8 +77,9 @@ func (this *Server) Handler(conn net.Conn) {
 			// 提取客户端发送的信息
 			msg := string(buf[:n-1])
 
-			// 广播信息
-			this.BroadCast(user, msg)
+			// 用户针对msg处理,如何发送
+			user.DoMessage(msg)
+
 		}
 	}()
 
