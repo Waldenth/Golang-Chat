@@ -60,8 +60,30 @@ func (this *Server) Handler(conn net.Conn) {
 	this.mapLock.Lock()
 	this.OnlineMap[user.Name] = user
 	this.mapLock.Unlock()
-	//全局广播消息
+	//全局广播用户上线消息
 	this.BroadCast(user, " is online now.")
+
+	//接受客户端发送的消息
+	go func() {
+		buf := make([]byte, 4096)
+		for {
+			n, err := conn.Read(buf)
+			if n == 0 {
+				this.BroadCast(user, " is offline now.")
+				return
+			}
+			if err != nil {
+				fmt.Println("Conn Read err:", err)
+				return
+			}
+
+			// 提取客户端发送的信息
+			msg := string(buf[:n-1])
+
+			// 广播信息
+			this.BroadCast(user, msg)
+		}
+	}()
 
 	// 阻塞当前handler
 	select {}
