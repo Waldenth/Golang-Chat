@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"net"
 	"strings"
 )
@@ -38,6 +39,7 @@ func (this *User) Online() {
 	this.server.mapLock.Unlock()
 	//全局广播用户上线消息
 	this.server.BroadCast(this, " is online now.")
+	fmt.Println("[LOG]:User[" + this.Name + "] is online.")
 }
 
 // 用户下线业务
@@ -48,6 +50,7 @@ func (this *User) Offline() {
 	this.server.mapLock.Unlock()
 	//全局广播用户下线消息
 	this.server.BroadCast(this, " is offline now.")
+	fmt.Println("[LOG]:User[" + this.Name + "] is offline.")
 
 }
 
@@ -78,6 +81,10 @@ func (this *User) DoMessage(msg string) {
 	} else if len(msg) > 7 && msg[:7] == "rename|" { // 用户更新用户名
 		//格式: rename|<newname>
 		newName := strings.Split(msg, "|")[1]
+		if newName == "" || newName == "exit" {
+			this.SendMsg("Sorry, you can not set name empty or \"exit\"")
+			return
+		}
 
 		// 判断newNme是否被其他用户使用
 		_, ok := this.server.OnlineMap[newName]
@@ -117,6 +124,8 @@ func (this *User) DoMessage(msg string) {
 		remoteUser.SendMsg("User[" + this.Name + "] send a message to you:\n")
 		remoteUser.SendMsg(content + "\n")
 
+	} else if msg == "exit" {
+		this.Offline()
 	} else {
 		this.server.BroadCast(this, msg)
 	}

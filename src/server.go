@@ -70,7 +70,10 @@ func (this *Server) Handler(conn net.Conn) {
 		for {
 			n, err := conn.Read(buf)
 			if n == 0 {
-				user.Offline()
+				_, ok := user.server.OnlineMap[user.Name]
+				if ok {
+					user.Offline()
+				}
 				return
 			}
 			if err != nil {
