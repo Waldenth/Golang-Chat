@@ -1,5 +1,10 @@
 package main
 
+import (
+	"fmt"
+	"net"
+)
+
 type Server struct {
 	Ip   string
 	Port int
@@ -16,13 +21,30 @@ func NewServer(ip string, port int) *Server {
 	return server
 }
 
+// 链接处理业务
+func (this *Server) Handler(conn net.Conn) {
+	fmt.Println("建立连接成功")
+}
+
 // 启动服务器接口
 func (this *Server) Start() {
-	// socket lesten
-
-	//accept
-
-	//do handler
-
+	// socket listen
+	listener, err := net.Listen("tcp", fmt.Sprintf("%s:%d", this.Ip, this.Port))
+	if err != nil {
+		fmt.Println("net.listen.err:", err)
+	}
 	//close listen socket
+	defer listener.Close()
+
+	for {
+		//accept
+		conn, err := listener.Accept()
+		if err != nil {
+			fmt.Println("listener accept err:", err)
+			continue
+		}
+		//do handler
+		go this.Handler(conn)
+	}
+
 }
